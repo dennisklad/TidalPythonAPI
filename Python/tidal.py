@@ -5,42 +5,42 @@ import glob
 import os
 import pandas as pd
 
-def getTidalAlbums():
+PATH_ALBUMS = "albums/"
+
+def get_tidal_albums():
     #Log in Tidal with Browser and get albums
     session = tidalapi.Session()
     session.login_oauth_simple()
     return tidalapi.Favorites(session, session.user.id).albums()
 
-def writeTidalAlbums(albums):
+def write_tidal_albums(albums):
     #Open File to write
-    outWorkbook = xlsxwriter.Workbook('albums/albums'+str(datetime.datetime.now())[:10]+'.xlsx')
-    outSheet = outWorkbook.add_worksheet('albums')
+    out_workbook = xlsxwriter.Workbook(PATH_ALBUMS+'albums'+str(datetime.datetime.now())[:10]+'.xlsx')
+    out_sheet = out_workbook.add_worksheet('albums')
     #Create headers
-    [outSheet.write(0, idx, data) for idx, data in enumerate(["Artist","Title","Release","Tracks","Duration"])]
+    [out_sheet.write(0, idx, data) for idx, data in enumerate(["Artist","Title","Release","Tracks","Duration"])]
     #Write data to file
-    for item in range(len(albums)):
-        partist =  ' & '.join([str(art.name) for art in albums[item].artists])
-        outSheet.write(item+1, 0, partist)
-        outSheet.write(item+1, 1, albums[item].name)
-        outSheet.write(item+1, 2, albums[item].release_date.year)
-        outSheet.write(item+1, 3, albums[item].num_tracks)
-        outSheet.write(item+1, 4, int(albums[item].duration/60))
-    outWorkbook.close()
+    for row_num in range(len(albums)):
+        out_sheet.write(row_num+1, 0, ' & '.join([str(artist.name) for artist in albums[row_num].artists]))
+        out_sheet.write(row_num+1, 1, albums[row_num].name)
+        out_sheet.write(row_num+1, 2, albums[row_num].release_date.year)
+        out_sheet.write(row_num+1, 3, albums[row_num].num_tracks)
+        out_sheet.write(row_num+1, 4, int(albums[row_num].duration/60))
+    out_workbook.close()
 
-def compareNewAlbums():
+def compare_new_albums():
     #Compare new rows that were added in the latest iteration
-    files = os.listdir('albums/')
-    fnew = files[len(files)-1]
-    fold = files[len(files)-2]
-    print ("fnew: " + fnew)
-    print ("fold: " + fold)
-    dfnew=pd.read_excel('albums/' + fnew)
-    dfold=pd.read_excel('albums/' + fold)
-    print(f"New file has {len(dfnew)} rows, old file has {len(dfold)} rows. You added {len(dfnew)-len(dfold)} albums since the last update.\n")
+    files = os.listdir(PATH_ALBUMS)
+    dfnew, dfold = pd.read_excel(PATH_ALBUMS + files[len(files)-1]), pd.read_excel(PATH_ALBUMS + files[len(files)-2])
     merged = dfnew.append(dfold)
     merged = merged.drop_duplicates(keep=False).sort_index()
-    print (merged)
     merged.to_excel("unique.xlsx")
+    #Print values to console
+    print(f"\nNew file {files[len(files)-1]} has {len(dfnew)} rows. \
+        \nOld file {files[len(files)-2]} has {len(dfold)} rows. \
+        \nYou added {len(dfnew)-len(dfold)} albums since the last update. \
+        \n", merged)
 
-writeTidalAlbums(getTidalAlbums())
-compareNewAlbums()
+#Call functions
+write_tidal_albums(get_tidal_albums())
+compare_new_albums()

@@ -1,0 +1,8 @@
+.sheet{
+    height: 800px;
+    overflow: hidden;
+    position: relative;
+    width: 100%;
+    border-top: 1px solid #90C547;
+    border-bottom: 1px solid #90C547;
+}

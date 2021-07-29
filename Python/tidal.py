@@ -1,3 +1,4 @@
+from pandas.core.frame import DataFrame
 import tidalapi
 import xlsxwriter
 import datetime
@@ -34,12 +35,26 @@ def compare_new_albums():
     dfnew, dfold = pd.read_excel(PATH_ALBUMS + files[len(files)-1]), pd.read_excel(PATH_ALBUMS + files[len(files)-2])
     merged = dfnew.append(dfold)
     merged = merged.drop_duplicates(keep=False).sort_index()
-    merged.to_excel("unique.xlsx")
+    merged_add = DataFrame({'Artist':[],'Title':[],'Release':[],'Tracks':[],'Duration':[]})
+    merged_rem = DataFrame({'Artist':[],'Title':[],'Release':[],'Tracks':[],'Duration':[]})
+    
+    for idx in range(len(merged)):    
+        if len(dfnew.loc[dfnew['Title']==merged.iloc[idx,1]])>0:
+            print(idx, merged.iloc[idx,1], "was added.")
+            merged_add.loc[len(merged_add.index)] = merged.iloc[idx]
+        if len(dfold.loc[dfold['Title']==merged.iloc[idx,1]])>0:
+            print(idx, merged.iloc[idx,1], "was removed.")
+            merged_rem.loc[len(merged_rem.index)] = merged.iloc[idx]
+
+    merged_add.to_excel("unique_added.xlsx")
+    merged_rem.to_excel("unique_removed.xlsx")
+
     #Print values to console
     print(f"\nNew file {files[len(files)-1]} has {len(dfnew)} rows. \
         \nOld file {files[len(files)-2]} has {len(dfold)} rows. \
-        \nYou added {len(dfnew)-len(dfold)} albums since the last update. \
-        \n", merged)
+        \nYou added {len(merged_add)} albums since the last update. \
+        \nYou removed {len(merged_rem)} albums since the last update. \
+        \n")
 
 #Call functions
 write_tidal_albums(get_tidal_albums())
